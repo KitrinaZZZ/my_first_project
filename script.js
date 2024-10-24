@@ -15,65 +15,57 @@ let smNightY = 0;
 let s1 = 40;
 let time = 0; 
 let angle = 0;
-let transitionProgress = 0;  // Tracks day-night transition progress
-let isDayTime = true; 
+
+let isNight = false;
+let dayColor, nightColor;
+let transitionValue = 0;
+let bgTime = 0;
 
 function setup() {
   let canvas=createCanvas(800, 500);
   background(0);
+  dayColor = color(173, 216, 230);
+  nightColor = color(123, 140, 148);
+  
   canvas.id("p5-canvas");
+
 }
 
 function draw() {
-  background(0);
-  //handleDayNightTransition();
-  //let skyColor = lerpColor(color(173, 216, 230), color(123, 140, 148), transitionProgress);
-  //fill(skyColor);
-  //rect(dayX, 0, width*2, height); 
-  fill(173, 216, 230);
-  rect(dayX, 0, width * 2, height);
-  //fill(224,216, 230);
+  let cc = lerpColor(dayColor, nightColor,transitionValue);
+  
+  background(cc);
+
+  // 白天黑天切换时间间隔
+  if (millis() - bgTime > 10000) {
+    isNight = !isNight;
+    bgTime = millis();
+  }
   daybg();
   rectMode(CORNER);
-  fill(255, 25, 25);
-  ellipse(dayX + width, 50, 50, 50);
-
+  // 太阳、月亮
+  if (isNight) {
+    fill(242, 191, 70);
+    ellipse(50, 50, 50, 50);
+    fill(cc);
+    ellipse(50 + 20, 50, 50, 50);
+  } else {
+    fill(255, 25, 25);
+    ellipse(50, 50, 50, 50);
+  }
   growGrass();
+
   
-  fill(123, 140, 148);
-
-  rect(nightX, 0, width * 2, height);
-  fill(242, 191, 70);
-  ellipse(nightX + width, 50, 50, 50);
-  fill(123, 140, 148);
-  ellipse(nightX + width + 20, 50, 50, 50);
-  fill(255);
-  ellipse(nightX+random(width), random(height), 4, 4);
-  fill(255);
-  ellipse(nightX+random(width), random(height), 4, 4);
-  fill(255);
-  ellipse(nightX+random(width), random(height), 4, 4);
-
-  dayX -= 2;
-  nightX -= 2;
-  if (dayX <= -width * 2) {
-    dayX = width * 2;
-  }
-
-  if (nightX <= -width * 2) {
-    nightX = width * 2;
-  }
-
   noStroke();
 
   push();
 
-  snDayX = width * noise(frameCount * 0.01);
+  smDayX = width * noise(frameCount * 0.01);
   smDayY = height * noise(frameCount * 0.005);
 
-  let offsetX = snDayX;
+  let offsetX = smDayX;
   let offsetY = smDayY;
-  if (nightX <= 0) {
+  if (isNight) {
     smNightX = lerp(smNightX, mouseX, 0.05);
     smNightY = lerp(smNightY, mouseY, 0.05);
     offsetX = smNightX;
@@ -86,7 +78,7 @@ function draw() {
     tentacles(width / 3 + i * 20, height / 2, lengths[i]); // Call tentacles at varying x positions with fixed lengths
   }
 
-  if (nightX <= 0) {
+  if (isNight) {
     
     fill(95, 205, 114);
     scale(1.2);
@@ -122,6 +114,13 @@ function draw() {
     drawFace(x[i], y[i], s[i]);
     overlap(x[i], y[i], s[i], i);
   }
+    if (isNight) {
+    transitionValue += 0.005;
+  } else {
+    transitionValue -= 0.005;
+  }
+  transitionValue = constrain(transitionValue, 0, 1);
+
 }
 
 // Tentacle function with length parameter
@@ -135,7 +134,7 @@ function tentacles(x, y, length) {
     let j = 10 * sin((frameCount - i) / 50);
    
     fill(255);
-    if (nightX <= 0) {
+    if (isNight) {
       j = 10 * sin(i / 50);
       noStroke();
       fill(140, 51, 5);
@@ -181,26 +180,11 @@ function growGrass(){
     drawGrass(x1, y1, x2, y2);
   }
 }
-function handleDayNightTransition() {
-  // Update transition progress based on whether it's day or night
-  if (isDayTime) {
-    transitionProgress += 0.001; // Transition to night
-    if (transitionProgress >= 1) {
-      transitionProgress = 1;
-      isDayTime = false; // Now it's night
-    }
-  } else {
-    transitionProgress +=0.01; // Transition back to day
-    if (transitionProgress <= 0) {
-      transitionProgress = 0;
-      isDayTime = true; // Now it's day again
-    }
-  }
-}
+
 function overlap(xx, yy, ss, index) {
   let offsetX = width / 2;
   let offsetY = height / 2;
-  if (nightX <= 0) {
+  if (isNight) {
     offsetX = mouseX;
     offsetY = mouseY;
   }
@@ -225,11 +209,17 @@ function daybg(){
       angle = map(d,0,600,0,2*PI);
       let d1= dist(x,y, width / 2, height / 2);
       let wave = cos(mouseX*0.05-d1*0.05) * 0.5 + 0.5;
-      let hueValue = map(wave, 0, 1, 130,240);
-      let saturationValue = map(wave, 0, 1, 210, 240); 
-      let brightnessValue = 230; 
-      fill(hueValue, saturationValue, brightnessValue);
-      
+      let dayhueValue = map(wave, 0, 1, 173,200);
+      let daysaturationValue = map(wave, 0, 1, 210, 240); 
+      let daybrightnessValue = map(wave, 0, 1, 230, 240); 
+        let nighthueValue = map(wave, 0, 1, 123,180);
+      let nightsaturationValue = map(wave, 0, 1, 140, 160); 
+      let nightbrightnessValue = map(wave, 0, 1, 148, 180);
+    dayColor1 = color(dayhueValue, daysaturationValue, daybrightnessValue);
+  nightColor1 = color(nighthueValue, nightsaturationValue, nightbrightnessValue);
+      let cc1 = lerpColor(dayColor1, nightColor1,transitionValue);
+      //fill(hueValue, saturationValue, brightnessValue);
+      fill(cc1);
       
       push();
       translate(x,y);
